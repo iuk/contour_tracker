@@ -6,7 +6,10 @@
 
 using namespace std;
 
-int myContourTracker(cv::Mat &map, std::vector<cv::Point2i> &contour, int nearber){
+//img_in: image input, 8-bit 1-channel, 0 is background, >0 is frontground
+//contour_out: contour output
+//neighbour: neighbourhood, use neighbour=8 or neighbour =4
+int myContourTracker(cv::Mat &img_in, std::vector<cv::Point2i> &contour_out, int neighbour){
   static cv::Point direction8[16]={
     cv::Point(-1,0),cv::Point(-1,1),cv::Point(0,1),cv::Point(1,1),
     cv::Point(1,0),cv::Point(1,-1),cv::Point(0,-1),cv::Point(-1,-1),
@@ -19,9 +22,9 @@ int myContourTracker(cv::Mat &map, std::vector<cv::Point2i> &contour, int nearbe
   };
   // get top left corner
   cv::Point2i start_corner=cv::Point2i(-1,-1);
-  for(int y=0; y<map.rows; y++){
-    for(int x=0; x<map.cols; x++){
-      if(map.at<uint8_t>(y,x)!=0){
+  for(int y=0; y<img_in.rows; y++){
+    for(int x=0; x<img_in.cols; x++){
+      if(img_in.at<uint8_t>(y,x)!=0){
         start_corner=cv::Point(x,y);
         break;
       }
@@ -35,24 +38,24 @@ int myContourTracker(cv::Mat &map, std::vector<cv::Point2i> &contour, int nearbe
     return -1;
   }
   int this_direction=0;
-  contour.push_back(start_corner);
+  contour_out.push_back(start_corner);
   cv::Point this_border=start_corner;
   // 8 neighbourhood
-  if(nearber==8){
+  if(neighbour==8){
     while(true){
       for(int i=0;i<8;i++){
         cv::Point next_check=this_border+direction8[this_direction+i];
         if(next_check.x<0||next_check.y<0||
-           next_check.x>=map.cols||next_check.y>=map.rows){
+           next_check.x>=img_in.cols||next_check.y>=img_in.rows){
           continue;
         }
         // try next direction
-        if(map.at<uint8_t>(next_check)==0){
+        if(img_in.at<uint8_t>(next_check)==0){
           continue;
         }
         // find next border
         else{
-          contour.push_back(next_check);
+          contour_out.push_back(next_check);
           this_border=next_check;
           this_direction=this_direction+i-2;
           if(this_direction>=8) this_direction-=8;
@@ -72,14 +75,14 @@ int myContourTracker(cv::Mat &map, std::vector<cv::Point2i> &contour, int nearbe
       for(int i=0;i<4;i++){
         cv::Point next_check=this_border+direction4[this_direction+i];
         if(next_check.x<0||next_check.y<0||
-           next_check.x>=map.cols||next_check.y>=map.rows){
+           next_check.x>=img_in.cols||next_check.y>=img_in.rows){
           continue;
         }
         // try next direction
-        if(map.at<uint8_t>(next_check)==0) continue;
+        if(img_in.at<uint8_t>(next_check)==0) continue;
         // find next border
         else{
-          contour.push_back(next_check);
+          contour_out.push_back(next_check);
           this_border=next_check;
           this_direction=this_direction+i-1;
           if(this_direction>=4) this_direction-=4;
